@@ -32,18 +32,21 @@ def plugin(ctx: Context):
 
     content = ""
     for f in ctx.data.functions:
-        lines = reducer.detect(mc.parse(ctx.data.functions[f]))
-        if len(lines.keys()) > 0:
-            content += f"- function: {f}\n"
-            content += "  - tag_references:\n"
+        content += f"- function: {f}\n"
+        try:
+            lines = reducer.detect(mc.parse(ctx.data.functions[f]))
+            if len(lines.keys()) > 0:
+                content += "  - tag_references:\n"
 
-            for l in lines:
-                content += "    - line: " + l + "\n"
-                for p in lines[l]:
-                    content += "      - path: " + p[0] + "\n"
+                for l in lines:
+                    content += "    - line: " + l + "\n"
+                    for p in lines[l]:
+                        content += "      - path: " + p[0] + "\n"
 
-                    if p[0] != p[1]:
-                        content += "         fix: " + p[1] + "\n"
+                        if p[0] != p[1]:
+                            content += "         fix: " + p[1] + "\n"
+        except:
+            content += '  - tag_references: errored while parsing'
 
 
     ctx.data.extra["functions.yaml"] = TextFile(content)
