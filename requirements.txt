@@ -1,2 +1,3 @@
 argparse >= 1.4.0
 beet >= 0.104.1
+mecha >= 0.90.0
