@@ -74,7 +74,6 @@ def find_components(nbt: Union[Compound, str]) -> tuple[str, dict]:
     if cmd := nbt.get("CustomModelData"):
         cmd: Int = cmd
         components["minecraft:custom_model_data"] = cmd.as_unsigned
-        print(cmd)
         del nbt["CustomModelData"]
 
     if damage := nbt.get("Damage"):
@@ -356,7 +355,7 @@ def find_components(nbt: Union[Compound, str]) -> tuple[str, dict]:
 
                 if 'id' not in bee['entity_data']:
                     bee['entity_data']['id'] = "UNKNOWN_ENTITY"
-                    
+
                 bee['ticks_in_hive'] = bee['TicksInHive']
                 del bee['TicksInHive']
                 bee['min_ticks_in_hive'] = bee['MinOccupationTicks']
@@ -452,7 +451,6 @@ def handle_enchantments(nbt, components, enchantments):
         "levels": {},
     }
 
-    print(nbt)
     for e in enchantments:
         id: str = e.get("id", "")
         if id == "":
@@ -523,7 +521,6 @@ def handle_common_loot_dict(dict: dict):
 def handle_function(function_list: list[dict], function: dict):
     function_list.append(function)
     type = function["function"].split(":")[-1]
-    print(type)
 
     handle_common_loot_dict(function)
 
@@ -678,7 +675,6 @@ def handle_condition_predicate(c):
         case "entity_properties":
             handle_entity_properties_predicate(c["predicate"])
         case "match_tool":
-            print(c["predicate"])
             handle_item_data(c["predicate"])
         case "any_of" | "all_of":
             for c in c["terms"]:
