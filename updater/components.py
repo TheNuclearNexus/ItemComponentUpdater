@@ -228,9 +228,9 @@ def find_components(nbt: Compound|str) -> tuple[str, dict]:
                 del nbt["resolved"]
             component["resolved"] = resolved
 
-            components["minecraft:written_book_contents"] = component
+            components["minecraft:written_book_content"] = component
         else:
-            components["minecraft:writable_book_contents"] = component
+            components["minecraft:writable_book_content"] = component
     
     if trim := nbt.get('Trim'):
         components["minecraft:trim"] = {
