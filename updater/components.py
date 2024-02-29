@@ -1,73 +1,51 @@
-from itertools import zip_longest
-from typing import Union
-from beet import Advancement, Context, ItemModifier, LootTable, Predicate, Recipe
 from nbtlib import parse_nbt, Compound, Int, serialize_tag, Byte, List, Short, IntArray, Float, Double
+from itertools import zip_longest
+from .constants import BASE_COLORS, DECORATION_IDS, FIREWORK_EXPLOSION_SHAPES
 
-DECORATION_IDS: list[str] = [
-    "player",
-    "frame",
-    "red_marker",
-    "blue_marker",
-    "target_x",
-    "target_point",
-    "player_off_map",
-    "player_off_limits",
-    "mansion",
-    "monument",
-    "banner_white",
-    "banner_orange",
-    "banner_magenta",
-    "banner_light_blue",
-    "banner_yellow",
-    "banner_lime",
-    "banner_pink",
-    "banner_gray",
-    "banner_light_gray",
-    "banner_cyan",
-    "banner_purple",
-    "banner_blue",
-    "banner_brown",
-    "banner_green",
-    "banner_red",
-    "banner_black",
-    "red_x",
-    "village_desert",
-    "village_plains",
-    "village_savanna",
-    "village_snowy",
-    "village_taiga",
-    "jungle_temple",
-    "swamp_hut"
-]
+def handle_explosion(explosion):
+    return {
+            "shape": FIREWORK_EXPLOSION_SHAPES[explosion.get("Type")],
+            "colors": explosion.get("Colors", IntArray([])).tolist(),
+            "fade_colors": explosion.get("FadeColors", IntArray([])).tolist(),
+            "has_trail": True if explosion.get("Trail").as_unsigned == 1 else False,
+            "has_flicker": True if explosion.get("Flicker").as_unsigned == 1 else False
+        }
 
-FIREWORK_EXPLOSION_SHAPES = [
-    "small_ball",
-    "large_ball",
-    "star",
-    "creeper",
-    "burst"
-]
 
-BASE_COLORS = [
-    "white",
-    "orange",
-    "magenta",
-    "light_blue",
-    "yellow",
-    "lime",
-    "pink",
-    "gray",
-    "light_gray",
-    "cyan",
-    "purple",
-    "blue",
-    "brown",
-    "green",
-    "red",
-    "black"
-]
+def handle_enchantments(nbt, components, enchantments):
+    ench_component = {
+        "levels": {},
+    }
 
-def find_components(nbt: Union[Compound, str]) -> tuple[str, dict]:
+    for e in enchantments:
+        id: str = e.get("id", "")
+        if id == "":
+            components["minecraft:enchantment_glint_override"] = True
+            continue
+
+        if not id.startswith("minecraft:"):
+            id = "minecraft:" + id
+
+        ench_component["levels"][id] = e.get("lvl", Short(1)).as_unsigned
+    return ench_component
+
+
+def handle_slotted_item(slotted_item): 
+    
+    if "Slot" in slotted_item:
+        slot = slotted_item["Slot"].as_unsigned
+        del slotted_item["Slot"]
+    else:
+        slot = 0
+    handle_item_data(slotted_item, data_holder="tag")
+
+    return {
+        "slot": slot,
+        "item": slotted_item
+    }
+
+
+def find_components(nbt: Compound|str) -> tuple[str, dict]:
     components: dict = {}
     nbt: Compound = parse_nbt(nbt) if isinstance(nbt, str) else nbt
 
@@ -439,155 +417,6 @@ def find_components(nbt: Union[Compound, str]) -> tuple[str, dict]:
 
     return (serialize_tag(nbt, compact=True), components)
 
-def handle_explosion(explosion):
-    return {
-            "shape": FIREWORK_EXPLOSION_SHAPES[explosion.get("Type")],
-            "colors": explosion.get("Colors", IntArray([])).tolist(),
-            "fade_colors": explosion.get("FadeColors", IntArray([])).tolist(),
-            "has_trail": True if explosion.get("Trail").as_unsigned == 1 else False,
-            "has_flicker": True if explosion.get("Flicker").as_unsigned == 1 else False
-        }
-
-
-def handle_enchantments(nbt, components, enchantments):
-    ench_component = {
-        "levels": {},
-    }
-
-    for e in enchantments:
-        id: str = e.get("id", "")
-        if id == "":
-            components["minecraft:enchantment_glint_override"] = True
-            continue
-
-        if not id.startswith("minecraft:"):
-            id = "minecraft:" + id
-
-        ench_component["levels"][id] = e.get("lvl", Short(1)).as_unsigned
-    return ench_component
-
-
-def handle_loot_entry(entry: dict):
-    type: str = entry["type"].split(":")[-1]
-
-    if type == "alternatives" or type == "group" or type == "sequence":
-        for c in entry["children"]:
-            handle_loot_entry(c)
-        return
-
-    # if type == "item":
-    #     entry["id"] = entry["name"]
-    #     del entry["name"]
-
-    if type == "loot_table":
-        entry["value"] = entry["name"]
-        del entry["name"]
-
-    if "functions" not in entry:
-        return
-
-    handle_common_loot_dict(entry)
-
-
-def handle_function_list(functions: list[dict]) -> list[dict]:
-    new_functions = []
-
-    for function in functions:
-        handle_function(new_functions, function)
-
-    return new_functions
-
-
-def handle_loot_table(path: str, loot_table: LootTable):
-    print(f"Loot Table: {path}")
-    data = loot_table.data
-    handle_common_loot_dict(data)
-
-    pools = data["pools"]
-    for pool in pools:
-        handle_common_loot_dict(pool)
-        for entry in pool["entries"]:
-            handle_loot_entry(entry)
-
-    return LootTable(data)
-
-
-def handle_common_loot_dict(dict: dict):
-    if functions := dict.get("functions"):
-        dict["functions"] = handle_function_list(functions)
-
-    if conditions := dict.get("conditions"):
-        for c in conditions:
-            handle_condition_predicate(c)
-
-
-def handle_function(function_list: list[dict], function: dict):
-    function_list.append(function)
-    type = function["function"].split(":")[-1]
-
-    handle_common_loot_dict(function)
-
-    match type:
-        case "set_nbt":
-            function["function"] = "minecraft:set_custom_data"
-            (new_tag, components) = find_components(function["tag"])
-
-            if new_tag == "{}":
-                function_list.pop()
-            else:
-                function["tag"] = new_tag
-
-            if len(components.keys()) > 0:
-                function_list.append(
-                    {
-                        "function": "minecraft:set_components",
-                        "components": components,
-                    }
-                )
-
-            if "conditions" in function:
-                function_list[-1]["conditions"] = function["conditions"]
-
-        case "copy_nbt":
-            function["function"] = "minecraft:copy_custom_data"
-
-        case "set_attributes":
-            for modifier in function["modifiers"]:
-                handle_attribute_modifier(modifier)
-
-
-def handle_attribute_modifier(modifier):
-    if "attributename" in modifier:
-        modifier["type"] = modifier["attributename"]
-        del modifier["attributename"]
-
-    if modifier["operation"] == "addition" or modifier["operation"] == 0:
-        modifier["operation"] = "add_value"
-
-    elif modifier["operation"] == "multiply_base" or modifier["operation"] == 1:
-        modifier["operation"] = "add_multiplied_base"
-
-    elif modifier["operation"] == "multiply_total" or modifier["operation"] == 2:
-        modifier["operation"] = "add_multiplied_total"
-
-
-def handle_slotted_item(slotted_item): 
-    
-    if "Slot" in slotted_item:
-        slot = slotted_item["Slot"].as_unsigned
-        del slotted_item["Slot"]
-    else:
-        slot = 0
-    handle_item_data(slotted_item, data_holder="tag")
-
-    return {
-        "slot": slot,
-        "item": slotted_item
-    }
-
-"""
-Converts item nbt to components and custom_data
-"""
 def handle_item_data(item: dict, allow_air=True, data_holder="nbt"):
     if "item" in item:
         item["id"] = item["item"]
@@ -613,156 +442,18 @@ def handle_item_data(item: dict, allow_air=True, data_holder="nbt"):
 
     return item
 
+def handle_attribute_modifier(modifier):
+    if "attributename" in modifier:
+        modifier["type"] = modifier["attributename"]
+        del modifier["attributename"]
 
-def handle_entity_properties_predicate(predicate: dict):
-    if equipment := predicate.get("equipment"):
-        for slot in equipment:
-            handle_item_data(equipment[slot])
+    if "operation" not in modifier:
+        modifier["operation"] = "add_value"
+    elif modifier["operation"] == "addition" or modifier["operation"] == 0:
+        modifier["operation"] = "add_value"
 
-    if pred := predicate.get("vehicle"):
-        handle_entity_properties_predicate(pred)
-    if pred := predicate.get("passenger"):
-        handle_entity_properties_predicate(pred)
-    if pred := predicate.get("targetted_entity"):
-        handle_entity_properties_predicate(pred)
+    elif modifier["operation"] == "multiply_base" or modifier["operation"] == 1:
+        modifier["operation"] = "add_multiplied_base"
 
-
-def handle_advancement_trigger(trigger: dict):
-    if "conditions" not in trigger:
-        return
-
-    conditions = trigger["conditions"]
-
-    if item := conditions.get("item"):
-        handle_item_data(item)
-
-    if items := conditions.get("items"):
-        for i in items:
-            handle_item_data(i)
-
-    if pred := conditions.get("entity"):
-        handle_legacy_or_list(pred)
-
-    if pred := conditions.get("player"):
-        handle_legacy_or_list(pred)
-
-
-def handle_legacy_or_list(pred: Union[list, dict]):
-    if isinstance(pred, dict):
-        handle_entity_properties_predicate(pred)
-    else:
-        for c in pred:
-            handle_condition_predicate(c)
-
-def handle_location_predicate(predicate: dict):
-    if structure := predicate.get('structure'):
-        del predicate['structure']
-        predicate['structures'] = structure
-
-    if biome := predicate.get('biome'):
-        del predicate['biome']
-        predicate['biomes'] = biome
-
-    if block := predicate.get('block'):
-        if 'tag' in block:
-            block['block'] = '#' + block['tag']
-            del block['tag']    
-
-    if fluid := predicate.get('fluid'):
-        if 'tag' in fluid:
-            fluid['fluid'] = '#' + fluid['tag']
-            del fluid['tag']            
-
-def handle_condition_predicate(c):
-    match c["condition"].split(":")[-1]:
-        case "entity_properties":
-            handle_entity_properties_predicate(c["predicate"])
-        case "match_tool":
-            handle_item_data(c["predicate"])
-        case "any_of" | "all_of":
-            for c in c["terms"]:
-                handle_condition_predicate(c)
-        case "inverted":
-            handle_condition_predicate(c["term"])
-        case "location" | "location_check":
-            handle_location_predicate(c["predicate"])
-
-
-def handle_advancement(path: str, advancement: Advancement):
-    print(f"Advancement: {path}")
-    data = advancement.data
-
-    if display := data.get("display"):
-        if icon := display.get("icon"):
-
-            handle_item_data(icon, allow_air=False)
-
-    if criteria := data.get("criteria"):
-        for trigger in criteria.values():
-            handle_advancement_trigger(trigger)
-
-    return Advancement(data)
-
-
-def handle_predicate(path: str, predicate: Predicate):
-    print(f"Predicate: {path}")
-    data = predicate.data
-
-    if isinstance(data, list):
-        for c in data:
-            handle_condition_predicate(c)
-    else:
-        handle_condition_predicate(data)
-
-    return Predicate(data)
-
-
-def handle_recipe(path: str, recipe: Recipe):
-    print(f"Recipe: {path}")
-    data = recipe.data
-
-    if result := data.get("result"):
-        if isinstance(result, str) and data["type"].split(":")[-1] == "stonecutting":
-            data["result"] = {"id": result, "count": data.get("count", 1)}
-
-            if "count" in data:
-                del data["count"]
-        else:
-            handle_item_data(result)
-
-    return Recipe(data)
-
-def handle_item_modifier(path: str, modifer: ItemModifier):
-    data = modifer.data
-
-    if isinstance(data, list):
-        modifers = []
-        for f in data:
-            handle_function(modifers, f)
-        data = modifers
-    else:
-        modifers = []
-        handle_function(modifers,data)
-        if len(modifers) > 1:
-            data = modifers
-        else:
-            data = modifers[0]
-
-    return ItemModifier(data)
-
-def beet_default(ctx: Context):
-    for l in ctx.data.loot_tables:
-        ctx.data[l] = handle_loot_table(l, ctx.data.loot_tables[l])
-
-    for l in ctx.data.advancements:
-        ctx.data[l] = handle_advancement(l, ctx.data.advancements[l])
-
-    for l in ctx.data.predicates:
-        ctx.data[l] = handle_predicate(l, ctx.data.predicates[l])
-
-    for l in ctx.data.recipes:
-        ctx.data[l] = handle_recipe(l, ctx.data.recipes[l])
-
-    for l in ctx.data.item_modifiers:
-        ctx.data[l] = handle_item_modifier(l, ctx.data.item_modifiers[l])
-    yield
+    elif modifier["operation"] == "multiply_total" or modifier["operation"] == 2:
+        modifier["operation"] = "add_multiplied_total"

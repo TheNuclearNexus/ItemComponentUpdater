@@ -21,7 +21,7 @@ def main():
             "load": input,
         },
         "pipeline": [
-            "plugin"
+            "updater.plugin"
         ],
         "output": output
     }
