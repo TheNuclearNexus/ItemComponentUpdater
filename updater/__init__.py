@@ -1,4 +1,4 @@
-from beet import Context
+from beet import Context, TextFile
 from mecha import Mecha
 
 from updater.advancement import handle_advancement
@@ -29,9 +29,18 @@ def plugin(ctx: Context):
 
     reducer = TokenReducer()
 
+
+    content = ""
     for f in ctx.data.functions:
         lines = reducer.detect(mc.parse(ctx.data.functions[f]))
-        if len(lines) > 0:
-            print(f"Function: {f}")
-            print("References tag on lines: " + ",".join(lines))
+        if len(lines.keys()) > 0:
+            content += f"- function: {f}\n"
+            content += "  - tag_references:\n"
+
+            for l in lines:
+                content += "    - line: " + l + "\n"
+                for p in lines[l]:
+                    content += "      - path: " + p + "\n"
+
+    ctx.data.extra["functions.yaml"] = TextFile(content)
     yield
