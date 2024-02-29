@@ -1,0 +1,6 @@
+output.txt
+tcc/
+tcc_out/
+.venv/
+__pycache__/
+
