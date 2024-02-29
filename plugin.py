@@ -153,7 +153,7 @@ def find_components(nbt: Union[Compound, str]) -> tuple[str, dict]:
         del nbt["display"]
 
     if charged_projectiles := nbt.get("ChargedProjectiles"):
-        components["minecraft:charged_projectiles"] = charged_projectiles
+        components["minecraft:charged_projectiles"] = [handle_item_data(i) for i in charged_projectiles]
         del nbt["ChargedProjectiles"]
 
     if bundle_contents := nbt.get("Items"):
@@ -255,7 +255,10 @@ def find_components(nbt: Union[Compound, str]) -> tuple[str, dict]:
             components["minecraft:writable_book_contents"] = component
     
     if trim := nbt.get('Trim'):
-        components["minecraft:trim"] = trim
+        components["minecraft:trim"] = {
+            "material": trim.get("material", "UNKNOWN_MATERIAL"),
+            "pattern": trim.get("pattern", "UNKNOWN_PATTERN")
+        }
         del nbt['Trim']
 
     if effects := nbt.get('effects'):
@@ -467,7 +470,7 @@ def handle_enchantments(nbt, components, enchantments):
 def handle_loot_entry(entry: dict):
     type: str = entry["type"].split(":")[-1]
 
-    if type == "alternatives" or type == "group":
+    if type == "alternatives" or type == "group" or type == "sequence":
         for c in entry["children"]:
             handle_loot_entry(c)
         return
@@ -681,7 +684,7 @@ def handle_condition_predicate(c):
                 handle_condition_predicate(c)
         case "inverted":
             handle_condition_predicate(c["term"])
-        case "location":
+        case "location" | "location_check":
             handle_location_predicate(c["predicate"])
 
 
