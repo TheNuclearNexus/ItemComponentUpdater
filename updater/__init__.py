@@ -40,7 +40,11 @@ def plugin(ctx: Context):
             for l in lines:
                 content += "    - line: " + l + "\n"
                 for p in lines[l]:
-                    content += "      - path: " + p + "\n"
+                    content += "      - path: " + p[0] + "\n"
+
+                    if p[0] != p[1]:
+                        content += "         fix: " + p[1] + "\n"
+
 
     ctx.data.extra["functions.yaml"] = TextFile(content)
     yield

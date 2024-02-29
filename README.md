@@ -31,7 +31,10 @@ or
 python3 main.py -h
 ```
 
-The script will also output a `functions.yaml` file within the datapack. This file shows all occurences of `item` nbt it could find. This doesn't account for all cases such as item nbt hiding within storage.
+The script will also output a `functions.yaml` file within the datapack. 
+This file shows all occurences of `item` nbt it could find as well as potential fixes for the path.
+It can be wrong so copying and pasting directly is not recommended.
+This doesn't account for all cases such as item nbt hiding within storage.
 
 ## Planned features
 - Updating `give`, `item`, and `clear` commands
