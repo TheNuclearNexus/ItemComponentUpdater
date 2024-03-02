@@ -398,10 +398,14 @@ def find_components(nbt: Compound|str) -> tuple[str, dict]:
         #     ] = False
 
         if can_destroy:
-            components.setdefault("minecraft:can_break", {})["show_in_tooltip"] = False
+            components.setdefault("minecraft:can_break", {
+                "predciates": []
+            })["show_in_tooltip"] = False
 
         if can_place:
-            components.setdefault("minecraft:can_place_on", {})[
+            components.setdefault("minecraft:can_place_on", {
+                "predciates": []
+            })[
                 "show_in_tooltip"
             ] = False
 
