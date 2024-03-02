@@ -409,7 +409,7 @@ def find_components(nbt: Compound|str) -> tuple[str, dict]:
             components.setdefault("minecraft:hide_additional_tooltip", {})
 
         if dye:
-            components.setdefault("minecraft:dyed_color", {"color": 0})[
+            components.setdefault("minecraft:dyed_color", {"rgb": 0})[
                 "show_in_tooltip"
             ] = False
 
