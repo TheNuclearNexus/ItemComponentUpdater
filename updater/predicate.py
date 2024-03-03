@@ -33,12 +33,12 @@ def handle_location_predicate(predicate: dict):
 
     if block := predicate.get('block'):
         if 'tag' in block:
-            block['block'] = '#' + block['tag']
+            block['blocks'] = '#' + block['tag']
             del block['tag']    
 
     if fluid := predicate.get('fluid'):
         if 'tag' in fluid:
-            fluid['fluid'] = '#' + fluid['tag']
+            fluid['fluids'] = '#' + fluid['tag']
             del fluid['tag']            
 
 def handle_condition_predicate(c):

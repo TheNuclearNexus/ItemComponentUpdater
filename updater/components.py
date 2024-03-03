@@ -290,7 +290,7 @@ def find_components(nbt: Compound|str) -> tuple[str, dict]:
 
     if skull_owner := nbt.get("SkullOwner"):
         component = {
-            name: skull_owner.get("Name") 
+            "name": skull_owner.get("Name") 
         }
 
         if id := skull_owner.get("Id"):
