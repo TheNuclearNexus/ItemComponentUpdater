@@ -265,9 +265,11 @@ def find_components(nbt: Compound|str) -> tuple[str, dict]:
         dim = nbt.get("LodestoneDimension")
         tracked = nbt.get("LodestoneTracked", 1)
 
-        components["minecraft:lodestone_target"] = {
-            "pos": [pos.get("X", 0), pos.get("Y", 0), pos.get("Z", 0)],
-            "dimension": dim,
+        components["minecraft:lodestone_tracker"] = {
+            "target": {
+                "pos": [pos.get("X", 0), pos.get("Y", 0), pos.get("Z", 0)],
+                "dimension": dim,
+            },
             "tracked": True if tracked == 1 else False
         }
 
