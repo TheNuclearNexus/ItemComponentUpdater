@@ -24,6 +24,8 @@ def handle_advancement_trigger(trigger: dict):
     if pred := conditions.get("player"):
         handle_legacy_or_list(pred)
 
+    if pred := conditions.get("location"):
+        handle_legacy_or_list(pred)
 
 def handle_legacy_or_list(pred: Union[list, dict]):
     if isinstance(pred, dict):
