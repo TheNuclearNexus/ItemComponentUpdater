@@ -12,7 +12,7 @@ from updater.token import TokenReducer
 parser = argparse.ArgumentParser()
  
 # Adding optional argument
-parser.add_argument("-o", "--output", help = "Folder to output too", default='.')
+parser.add_argument("-o", "--output", help = "Folder to output to", default='.')
 parser.add_argument("-i", "--input", help = "Input datapack folder", required=True)
 
 def format_path(input: str, path: str):
