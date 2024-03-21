@@ -77,8 +77,9 @@ def find_components(nbt: Compound|str) -> tuple[str, dict]:
                 attr[k.lower()] = a[k]
             handle_attribute_modifier(attr)
 
-            uuid: IntArray = attr["uuid"]
-            attr["uuid"] = uuid.tolist()
+            if "uuid" in attr:
+                uuid: IntArray = attr["uuid"]
+                attr["uuid"] = uuid.tolist()
             attr_components["modifiers"].append(attr)
 
         components["minecraft:attribute_modifiers"] = attr_components
