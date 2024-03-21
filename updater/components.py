@@ -443,7 +443,7 @@ def handle_item_data(item: dict, allow_air=True, data_holder="nbt"):
     del item[data_holder]
 
     if custom_data != "{}":
-        item["custom_data"] = custom_data
+        components["minecraft:custom_data"] = custom_data
     if len(components.keys()) > 0:
         item["components"] = components
 

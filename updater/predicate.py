@@ -12,8 +12,27 @@ from updater.components import handle_item_data
 def handle_entity_properties_predicate(predicate: dict):
     if equipment := predicate.get("equipment"):
         for slot in equipment:
-            handle_item_data(equipment[slot])
+            slot_data = equipment[slot]
+            handle_item_data(slot_data)
+            predicates = {}
 
+            if enchantments := slot_data.get("enchantments"):
+                predicates["minecraft:enchantments"] = enchantments
+                del slot_data["enchantments"]
+
+            if potion := slot_data.get("potion"):
+                predicates["minecraft:potion_contents"] = potion
+                del slot_data["potion"]
+
+            if durability := slot_data.get("durability"):
+                predicates["minecraft:damage"] = {
+                    "durability": durability
+                }
+                del slot_data["durability"]
+
+            if len(predicates.keys()) >= 1:
+                slot_data["predicates"] = slot_data
+            
     if pred := predicate.get("vehicle"):
         handle_entity_properties_predicate(pred)
     if pred := predicate.get("passenger"):
