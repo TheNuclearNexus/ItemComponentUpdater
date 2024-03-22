@@ -31,7 +31,7 @@ def handle_entity_properties_predicate(predicate: dict):
                 del slot_data["durability"]
 
             if len(predicates.keys()) >= 1:
-                slot_data["predicates"] = slot_data
+                slot_data["predicates"] = predicates
             
     if pred := predicate.get("vehicle"):
         handle_entity_properties_predicate(pred)
