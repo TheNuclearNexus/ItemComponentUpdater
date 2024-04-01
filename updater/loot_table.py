@@ -16,7 +16,7 @@ def handle_loot_entry(entry: dict):
     #     entry["id"] = entry["name"]
     #     del entry["name"]
 
-    if type == "loot_table":
+    if type == "loot_table" and "value" not in entry:
         entry["value"] = entry["name"]
         del entry["name"]
 
